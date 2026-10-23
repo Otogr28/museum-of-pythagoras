@@ -153,23 +153,31 @@ details li { margin-bottom: 6px; }
 .frame:fullscreen { border-radius: 0; box-shadow: none; aspect-ratio: auto; background: var(--bg); }
 
 @media (max-width: 640px) {
-  header { padding-top: 24px; }
+  /* phones: wider side margins, and the first screen holds only the title and the player, centered;
+     the contents and credits follow on scroll */
+  .wrap, .player { width: calc(100% - 56px); }
+  .hero { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; padding: 20px 0 28px; }
+  header { padding: 0 0 18px; }
+  .tick { display: none; }
+  h2 { margin-top: 12px; }
   .labels span { font-size: 11px; letter-spacing: .04em; }
-  .btn { padding: 0 9px; }
+  .controls { gap: 6px; }
+  .btn { min-width: 36px; padding: 0 6px; }
+  .btn.play { min-width: 44px; }
   .btn .lbl { display: none; }
   .spacer { flex-basis: 100%; height: 0; }
-  .clock { margin-left: 0; }
+  .clock { margin: 6px 0 4px; }
 }
 </style>
 </head>
 <body>
+<main>
+<div class="hero">
 <header class="wrap">
   <div class="kicker">CMD Club · Gordon College</div>
   <h1>Museum of Pythagoras</h1>
   <p class="sub">Pythagorean Theorem Day, October 24, 2026</p>
 </header>
-
-<main>
   <div class="player">
   <div class="frame" id="frame">
     <iframe id="stage" src="Main.dc.html?v=a21133d3" title="Museum of Pythagoras animation" tabindex="-1"></iframe>
@@ -221,6 +229,7 @@ details li { margin-bottom: 6px; }
     </button>
   </div>
   </div>
+</div>
 
   <div class="wrap">
   <h2>Contents</h2>
