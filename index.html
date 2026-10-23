@@ -183,7 +183,7 @@ details li { margin-bottom: 6px; }
   <div class="player">
   <div class="frame" id="frame">
     <iframe id="stage" data-src="Main.dc.html?v=a21133d3" title="Museum of Pythagoras animation" tabindex="-1"></iframe>
-    <video id="vid" playsinline muted preload="auto" poster="video/poster.jpg" hidden></video>
+    <video id="vid" playsinline muted preload="metadata" poster="video/poster.jpg" hidden></video>
     <div class="hit" id="hit" aria-hidden="true"></div>
     <div class="flash" id="flash" aria-hidden="true"></div>
     <div class="loading" id="loading">Setting the stage…</div>
@@ -278,7 +278,7 @@ details li { margin-bottom: 6px; }
   // stage (an svg foreignObject full of filters) smoothly. Desktops render it live.
   const VIDEO = matchMedia('(pointer: coarse)').matches || /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const VIDEO_SRC = 'video/museum-of-pythagoras-720p.mp4';
+  const VIDEO_SRC = 'video/museum-of-pythagoras-1080p.mp4';
 
   let svg = null, scenes = [], parts = [], total = 0;
   let t = 0, playing = true, rate = 1, loop = true, last = null;
