@@ -47,7 +47,8 @@ h1 {
   position: relative; aspect-ratio: 16 / 9; width: 100%; border-radius: 6px; overflow: hidden; background: var(--bg);
   box-shadow: inset 0 0 0 2px rgba(181,150,220,.35), 0 0 0 1px rgba(0,0,0,.3), 0 0 36px rgba(245,212,242,.12), 0 24px 60px rgba(0,0,0,.45);
 }
-.frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
+.frame iframe, .frame video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
+.frame video { object-fit: contain; background: var(--bg); }
 .frame .hit { position: absolute; inset: 0; cursor: pointer; }
 .loading {
   position: absolute; inset: 0; display: grid; place-items: center; background: var(--bg);
@@ -151,6 +152,7 @@ details ul { margin: 10px 0 0; padding-left: 18px; font-size: 13px; }
 details li { margin-bottom: 6px; }
 
 .frame:fullscreen { border-radius: 0; box-shadow: none; aspect-ratio: auto; background: var(--bg); }
+@media (pointer: coarse) { body { background-attachment: scroll; } }
 
 @media (max-width: 640px) {
   /* phones: wider side margins, and the first screen holds only the title and the player, centered;
@@ -161,7 +163,7 @@ details li { margin-bottom: 6px; }
   .tick { display: none; }
   h2 { margin-top: 12px; }
   .labels span { font-size: 11px; letter-spacing: .04em; }
-  .controls { gap: 6px; }
+  .controls { gap: 6px; justify-content: center; }
   .btn { min-width: 36px; padding: 0 6px; }
   .btn.play { min-width: 44px; }
   .btn .lbl { display: none; }
@@ -180,7 +182,8 @@ details li { margin-bottom: 6px; }
 </header>
   <div class="player">
   <div class="frame" id="frame">
-    <iframe id="stage" src="Main.dc.html?v=a21133d3" title="Museum of Pythagoras animation" tabindex="-1"></iframe>
+    <iframe id="stage" data-src="Main.dc.html?v=a21133d3" title="Museum of Pythagoras animation" tabindex="-1"></iframe>
+    <video id="vid" playsinline muted preload="auto" poster="video/poster.jpg" hidden></video>
     <div class="hit" id="hit" aria-hidden="true"></div>
     <div class="flash" id="flash" aria-hidden="true"></div>
     <div class="loading" id="loading">Setting the stage…</div>
@@ -270,7 +273,12 @@ details li { margin-bottom: 6px; }
   const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>';
   const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
   const $ = (id) => document.getElementById(id);
-  const iframe = $('stage');
+  const iframe = $('stage'), vid = $('vid');
+  // Phones and tablets play the pre-rendered video of the same animation: Safari on iOS cannot draw the live
+  // stage (an svg foreignObject full of filters) smoothly. Desktops render it live.
+  const VIDEO = matchMedia('(pointer: coarse)').matches || /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const VIDEO_SRC = 'video/museum-of-pythagoras-720p.mp4';
 
   let svg = null, scenes = [], parts = [], total = 0;
   let t = 0, playing = true, rate = 1, loop = true, last = null;
@@ -278,8 +286,8 @@ details li { margin-bottom: 6px; }
   const fmt = (s) => { s = Math.max(0, Math.floor(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 
   // Scene list from the page itself, so the controls always match the animation
-  function readScenes(win) {
-    const list = JSON.parse(win.OM_SCENES);
+  function readScenes(raw) {
+    const list = JSON.parse(raw);
     let at = 0;
     scenes = list.map((e, i) => {
       const [roman, ...rest] = e.name.split(' ');
@@ -384,11 +392,12 @@ details li { margin-bottom: 6px; }
   }
 
   function push(marked) {
-    if (!svg) return;
+    if (VIDEO || !svg) return;
     svg.dispatchEvent(new CustomEvent('data-om-seek-to-time-frame', { detail: { time: t, playing: marked } }));
   }
   function seek(x) {
     t = Math.max(0, Math.min(total - 0.001, x));
+    if (VIDEO) vid.currentTime = t;
     push(playing); paint();
   }
   function setPlaying(v) {
@@ -397,10 +406,16 @@ details li { margin-bottom: 6px; }
     $('play').setAttribute('aria-label', v ? 'Pause' : 'Play');
     const f = $('flash'); f.innerHTML = v ? ICON_PLAY : ICON_PAUSE;
     f.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove('on')));
+    if (VIDEO) { if (v) vid.play().catch(() => showPaused()); else vid.pause(); }
     push(v);
+  }
+  function showPaused() {
+    playing = false;
+    $('play').innerHTML = ICON_PLAY; $('play').setAttribute('aria-label', 'Play');
   }
   function setRate(r) {
     rate = r;
+    if (VIDEO) vid.playbackRate = r;
     $('rate').querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.r === r));
   }
   const stepScene = (d) => {
@@ -416,7 +431,8 @@ details li { margin-bottom: 6px; }
 
   // one clock: this page advances time and the stage renders each frame from it
   function tick(now) {
-    if (playing && svg) {
+    if (VIDEO) { t = Math.min(vid.currentTime, total - 0.001); paint(); }
+    else if (playing && svg) {
       if (last != null) {
         t += ((now - last) / 1000) * rate;
         if (t >= total) { if (loop) t %= total; else { t = total - 0.001; setPlaying(false); } }
@@ -442,12 +458,26 @@ details li { margin-bottom: 6px; }
     doc.head.appendChild(st);
     fitStage();
     new ResizeObserver(fitStage).observe(iframe);
-    readScenes(win); build();
+    readScenes(win.OM_SCENES); build();
     const hash = /t=(\d+(?:\.\d+)?)/.exec(location.hash);
     if (hash) t = Math.min(+hash[1], total - 0.001);
     setPlaying(true); paint();
     setTimeout(() => $('loading').classList.add('done'), 250);
     requestAnimationFrame(tick);
+  }
+
+  function attachVideo() {
+    fetch(iframe.dataset.src).then((r) => r.text()).then((html) => {
+      readScenes(/window\.OM_SCENES = '(.*?)';/.exec(html)[1]); build();
+      iframe.remove(); vid.hidden = false;
+      vid.loop = loop; vid.src = VIDEO_SRC;
+      vid.addEventListener('ended', () => showPaused());
+      vid.addEventListener('loadeddata', () => $('loading').classList.add('done'), { once: true });
+      const hash = /t=(\d+(?:\.\d+)?)/.exec(location.hash);
+      if (hash) vid.addEventListener('loadedmetadata', () => seek(+hash[1]), { once: true });
+      setPlaying(true); paint();
+      requestAnimationFrame(tick);
+    });
   }
 
   function waitForStage() {
@@ -458,7 +488,8 @@ details li { margin-bottom: 6px; }
     } catch (e) {}
     setTimeout(waitForStage, 120);
   }
-  waitForStage();
+  if (VIDEO) attachVideo();
+  else { iframe.src = iframe.dataset.src; waitForStage(); }
 
   // timeline drag and hover
   const track = $('track'), tip = $('tip');
@@ -491,10 +522,14 @@ details li { margin-bottom: 6px; }
   $('loop').classList.add('on');
   $('loop').addEventListener('click', () => {
     loop = !loop; $('loop').classList.toggle('on', loop); $('loop').setAttribute('aria-pressed', String(loop));
+    vid.loop = loop;
   });
   const toggleFull = () => {
+    const fr = $('frame');
     if (document.fullscreenElement) document.exitFullscreen();
-    else $('frame').requestFullscreen && $('frame').requestFullscreen();
+    else if (fr.requestFullscreen) fr.requestFullscreen();
+    else if (fr.webkitRequestFullscreen) fr.webkitRequestFullscreen();
+    else if (VIDEO && vid.webkitEnterFullscreen) vid.webkitEnterFullscreen();
   };
   $('full').addEventListener('click', toggleFull);
 
