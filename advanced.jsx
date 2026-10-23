@@ -322,7 +322,7 @@ function Series({ T, C, th, end }) {
         <span>{N > 0 ? `${Math.max(1, Math.round(N))} sine ${Math.round(N) === 1 ? 'wave' : 'waves'}` : ''}</span>
         <span>2π²/3 = {TOTAL2.toFixed(4)}</span>
       </div>
-      <div style={{ position: 'absolute', left: BX, top: BY + BH + 14, fontFamily: SERIF, fontSize: 40, color: th.ink, opacity: bo, fontFeatureSettings: TNUM, whiteSpace: 'nowrap' }}>
+      <div style={{ position: 'absolute', left: BX, top: BY + BH + 14, width: 692, textAlign: 'right', fontFamily: SERIF, fontSize: 40, color: th.ink, opacity: bo, fontFeatureSettings: TNUM, whiteSpace: 'nowrap' }}>
         ∑ (2/n)² = {sq(N).toFixed(4)}</div>
       <Column T={T} t0={t0} th={th} kicker="Analysis · Parseval, 1799" title="Parseval’s identity"
         note="Sine waves of different frequencies are perpendicular, so the squared length of a function is the sum of its squared coefficients.">
