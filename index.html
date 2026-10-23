@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Museum of Pythagoras</title>
+<meta name="description" content="The Museum of Pythagoras animation: seven parts on the Pythagorean theorem. CMD Club, Gordon College, Pythagorean Theorem Day, October 24, 2026.">
+<meta name="theme-color" content="#202b48">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23202b48'/%3E%3Cpath d='M8 24V10l16 14z' fill='none' stroke='%23f5d4f2' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+:root {
+  --bg: #202b48;
+  --deep: #1a233c;
+  --card: #26324f;
+  --ink: #f2eef0;
+  --muted: #b5b0ab;
+  --accent: #f5d4f2;
+  --gold: #e1ad66;
+  --rule: rgba(242, 238, 240, 0.14);
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  --text: 'Lora', Georgia, serif;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0; min-height: 100vh; color: var(--ink); font-family: var(--text);
+  background: radial-gradient(120% 80% at 50% 0%, #26324f 0%, var(--bg) 55%, var(--deep) 100%) fixed;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { width: min(1280px, 100% - 32px); margin: 0 auto; }
+/* keep the stage and its controls on one screen on short displays */
+.player { width: min(1280px, 100% - 32px, max(560px, (100svh - 300px) * 16 / 9)); margin: 0 auto; }
+
+header { padding: 36px 0 20px; text-align: center; }
+.kicker { font: 400 13px/1 var(--text); letter-spacing: .28em; text-transform: uppercase; color: var(--muted); }
+h1 {
+  margin: 12px 0 0; font: 600 clamp(38px, 6vw, 68px)/1 var(--serif); letter-spacing: .01em;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.08), 0 0 28px rgba(245,212,242,.25);
+}
+.sub { margin: 10px 0 0; font: italic 400 clamp(17px, 2.2vw, 22px)/1.35 var(--serif); color: var(--accent); }
+
+/* stage */
+.frame {
+  position: relative; aspect-ratio: 16 / 9; width: 100%; border-radius: 6px; overflow: hidden; background: var(--bg);
+  box-shadow: inset 0 0 0 2px rgba(181,150,220,.35), 0 0 0 1px rgba(0,0,0,.3), 0 0 36px rgba(245,212,242,.12), 0 24px 60px rgba(0,0,0,.45);
+}
+.frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
+.frame .hit { position: absolute; inset: 0; cursor: pointer; }
+.loading {
+  position: absolute; inset: 0; display: grid; place-items: center; background: var(--bg);
+  font: italic 400 24px var(--serif); color: var(--muted); transition: opacity .6s;
+}
+.loading.done { opacity: 0; pointer-events: none; }
+.flash {
+  position: absolute; left: 50%; top: 50%; width: 84px; height: 84px; margin: -42px 0 0 -42px; border-radius: 50%;
+  display: grid; place-items: center; background: rgba(32,43,72,.72); color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px rgba(225,173,102,.6), 0 0 24px rgba(245,212,242,.25);
+  opacity: 0; transform: scale(.8); transition: opacity .5s, transform .5s; pointer-events: none;
+}
+.flash.on { opacity: 1; transform: scale(1); transition: none; }
+.flash svg { width: 34px; height: 34px; }
+
+/* now playing */
+.now { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin: 18px 2px 10px; }
+.now .part { font: 600 clamp(22px, 3vw, 30px)/1.1 var(--serif); }
+.now .part b { color: var(--gold); font-weight: 600; margin-right: .35em; }
+.now .scene { font: italic 400 clamp(15px, 1.8vw, 18px)/1.4 var(--text); color: var(--muted); }
+
+/* timeline */
+.track { position: relative; height: 46px; cursor: pointer; touch-action: none; user-select: none; }
+.parts { position: absolute; left: 0; right: 0; top: 14px; height: 8px; display: flex; gap: 3px; }
+.seg { position: relative; height: 100%; background: rgba(242,238,240,.12); border-radius: 2px; overflow: hidden; }
+.seg .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #c9a6d8, var(--accent)); }
+.seg.cur { box-shadow: 0 0 10px rgba(245,212,242,.35); }
+.tick { position: absolute; top: 9px; width: 1px; height: 18px; background: rgba(242,238,240,.28); pointer-events: none; }
+.knob {
+  position: absolute; top: 18px; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; pointer-events: none;
+  background: var(--ink); box-shadow: 0 0 0 3px rgba(225,173,102,.55), 0 0 14px rgba(245,212,242,.6);
+}
+.labels { position: absolute; left: 0; right: 0; top: 30px; display: flex; gap: 3px; pointer-events: none; }
+.labels span { font: 600 13px/1 var(--serif); letter-spacing: .1em; color: var(--muted); text-align: center; overflow: hidden; white-space: nowrap; }
+.labels span.cur { color: var(--gold); }
+.tip {
+  position: absolute; bottom: 44px; transform: translateX(-50%); width: max-content; max-width: 280px;
+  padding: 8px 12px; border-radius: 4px; background: var(--card); pointer-events: none; opacity: 0; transition: opacity .15s;
+  box-shadow: inset 0 0 0 1px rgba(225,173,102,.45), 0 8px 24px rgba(0,0,0,.4);
+}
+.tip.on { opacity: 1; }
+.tip .t { font: 400 12px/1 var(--text); color: var(--muted); font-variant-numeric: tabular-nums; }
+.tip .n { margin-top: 4px; font: 600 18px/1.15 var(--serif); }
+.tip .d { margin-top: 3px; font: italic 400 13px/1.35 var(--text); color: var(--muted); }
+
+/* controls */
+.controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.btn {
+  height: 40px; min-width: 40px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font: 400 15px/1 var(--text); color: var(--ink); background: var(--card); border: 0; border-radius: 5px; cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(181,150,220,.35), inset 0 0 12px rgba(225,173,102,.08);
+  transition: box-shadow .2s, color .2s;
+}
+.btn:hover { box-shadow: inset 0 0 0 1px rgba(225,173,102,.7), inset 0 0 16px rgba(225,173,102,.16), 0 0 14px rgba(245,212,242,.18); }
+.btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn.play { min-width: 52px; }
+.btn.on { color: var(--gold); }
+.clock { margin-left: 4px; font: 400 15px/1 var(--text); font-variant-numeric: tabular-nums; color: var(--muted); }
+.clock b { color: var(--ink); font-weight: 400; }
+.spacer { flex: 1; }
+.rate { display: inline-flex; border-radius: 5px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(181,150,220,.35); }
+.rate button { height: 40px; padding: 0 10px; border: 0; background: var(--card); color: var(--muted); font: 400 14px/1 var(--text); cursor: pointer; }
+.rate button.on { color: var(--bg); background: var(--accent); }
+.rate button:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+
+/* chapters */
+h2 { margin: 44px 0 6px; font: 600 30px/1.1 var(--serif); }
+.hint { margin: 0 0 18px; font: italic 400 15px/1.5 var(--text); color: var(--muted); }
+.hint kbd { font: 400 12px/1 var(--text); padding: 3px 6px; border-radius: 3px; background: var(--card); box-shadow: inset 0 0 0 1px var(--rule); color: var(--ink); font-style: normal; }
+.chapters { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+.chap {
+  padding: 16px 16px 10px; border-radius: 6px; background: var(--card);
+  box-shadow: inset 0 0 0 1px rgba(181,150,220,.3), inset 0 0 22px rgba(225,173,102,.07);
+  transition: box-shadow .3s;
+}
+.chap.cur { box-shadow: inset 0 0 0 1.5px rgba(225,173,102,.75), inset 0 0 26px rgba(225,173,102,.14), 0 0 22px rgba(245,212,242,.16); }
+.chap h3 { margin: 0 0 8px; display: flex; align-items: baseline; gap: 10px; font: 600 23px/1.15 var(--serif); cursor: pointer; }
+.chap h3 .r { color: var(--gold); min-width: 2.2em; }
+.chap h3 .len { margin-left: auto; font: 400 12px/1 var(--text); color: var(--muted); font-variant-numeric: tabular-nums; }
+.chap ol { list-style: none; margin: 0; padding: 0; }
+.chap li button {
+  width: 100%; display: flex; gap: 10px; align-items: baseline; padding: 6px 6px; border: 0; border-radius: 3px;
+  background: none; color: var(--ink); text-align: left; cursor: pointer; font: 400 15px/1.35 var(--text);
+}
+.chap li button:hover { background: rgba(242,238,240,.06); }
+.chap li button:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.chap li .at { min-width: 3.4em; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.chap li.cur button { color: var(--accent); }
+.chap li.cur .at { color: var(--gold); }
+
+footer { margin: 56px 0 0; padding: 26px 0 40px; border-top: 1px solid var(--rule); font: 400 14px/1.6 var(--text); color: var(--muted); }
+footer p { margin: 0 0 10px; }
+footer a { color: var(--accent); }
+footer a:hover { color: #fff; }
+details summary { cursor: pointer; color: var(--ink); }
+details ul { margin: 10px 0 0; padding-left: 18px; font-size: 13px; }
+details li { margin-bottom: 6px; }
+
+.frame:fullscreen { border-radius: 0; box-shadow: none; aspect-ratio: auto; background: var(--bg); }
+
+@media (max-width: 640px) {
+  header { padding-top: 24px; }
+  .labels span { font-size: 11px; letter-spacing: .04em; }
+  .btn { padding: 0 9px; }
+  .btn .lbl { display: none; }
+  .spacer { flex-basis: 100%; height: 0; }
+  .clock { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="kicker">CMD Club · Gordon College</div>
+  <h1>Museum of Pythagoras</h1>
+  <p class="sub">Pythagorean Theorem Day, October 24, 2026</p>
+</header>
+
+<main>
+  <div class="player">
+  <div class="frame" id="frame">
+    <iframe id="stage" src="Main.dc.html" title="Museum of Pythagoras animation" tabindex="-1"></iframe>
+    <div class="hit" id="hit" aria-hidden="true"></div>
+    <div class="flash" id="flash" aria-hidden="true"></div>
+    <div class="loading" id="loading">Setting the stage…</div>
+  </div>
+
+  <div class="now" aria-live="polite">
+    <div class="part" id="nowPart"><b>I</b>Pythagoras Day</div>
+    <div class="scene" id="nowScene"></div>
+  </div>
+
+  <div class="track" id="track" role="slider" tabindex="0" aria-label="Timeline" aria-valuemin="0">
+    <div class="parts" id="parts"></div>
+    <div class="labels" id="labels"></div>
+    <div class="knob" id="knob"></div>
+    <div class="tip" id="tip"><div class="t"></div><div class="n"></div><div class="d"></div></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="prevPart" title="Previous part (Page Up)" aria-label="Previous part">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 5h2v14H5zM19 5v14l-6-7zM13 5v14l-6-7z"/></svg>
+    </button>
+    <button class="btn" id="prevScene" title="Previous scene ([)" aria-label="Previous scene">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM18 5v14L9 12z"/></svg>
+    </button>
+    <button class="btn" id="back" title="Back 10 seconds (←)" aria-label="Back 10 seconds">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v4h4"/></svg><span class="lbl">10 s</span>
+    </button>
+    <button class="btn play" id="play" title="Play or pause (Space)" aria-label="Pause"></button>
+    <button class="btn" id="fwd" title="Forward 10 seconds (→)" aria-label="Forward 10 seconds">
+      <span class="lbl">10 s</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4h-4"/></svg>
+    </button>
+    <button class="btn" id="nextScene" title="Next scene (])" aria-label="Next scene">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM6 5v14l9-7z"/></svg>
+    </button>
+    <button class="btn" id="nextPart" title="Next part (Page Down)" aria-label="Next part">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 5h2v14h-2zM5 5v14l6-7zM11 5v14l6-7z"/></svg>
+    </button>
+    <div class="clock"><b id="cur">0:00</b> / <span id="dur">8:22</span></div>
+    <div class="spacer"></div>
+    <div class="rate" id="rate" role="group" aria-label="Speed"></div>
+    <button class="btn" id="loop" title="Loop" aria-label="Loop" aria-pressed="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>
+    </button>
+    <button class="btn" id="full" title="Full screen (F)" aria-label="Full screen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+    </button>
+  </div>
+  </div>
+
+  <div class="wrap">
+  <h2>Contents</h2>
+  <p class="hint">Each part and scene opens at its start.
+    <kbd>Space</kbd> play or pause · <kbd>←</kbd> <kbd>→</kbd> 10 s · <kbd>[</kbd> <kbd>]</kbd> scene · <kbd>1</kbd>–<kbd>7</kbd> part · <kbd>F</kbd> full screen</p>
+  <div class="chapters" id="chapters"></div>
+  </div>
+</main>
+
+<footer class="wrap">
+  <p>An animation for the Museum of Pythagoras, a small exhibit by the CMD Club of Gordon College for Pythagorean Theorem Day, October 24, 2026.
+    Each part also plays on its own page: <a href="Pythagoras-Day.dc.html">I</a> · <a href="History.dc.html">II</a> · <a href="Proofs.dc.html">III</a> · <a href="Real-Life.dc.html">IV</a> · <a href="CS.dc.html">V</a> · <a href="Beyond.dc.html">VI</a> · <a href="Curiosities.dc.html">VII</a></p>
+  <details>
+    <summary>Image credits (Wikimedia Commons)</summary>
+    <ul>
+      <li>Plimpton 322. Photo author unknown. Public domain. <a href="https://commons.wikimedia.org/wiki/File:Plimpton_322.jpg">Source</a></li>
+      <li>Chinese pythagoras (Zhoubi Suanjing). Unknown. Public domain. <a href="https://commons.wikimedia.org/wiki/File:Chinese_pythagoras.jpg">Source</a></li>
+      <li>Kapitolinischer Pythagoras adjusted. Original upload by Galilea at German Wikipedia. Public domain. <a href="https://commons.wikimedia.org/wiki/File:Kapitolinischer_Pythagoras_adjusted.jpg">Source</a></li>
+      <li>James Abram Garfield, photo portrait seated. Brady-Handy Photograph Collection. Public domain. <a href="https://commons.wikimedia.org/wiki/File:James_Abram_Garfield,_photo_portrait_seated.jpg">Source</a></li>
+      <li>Albert Einstein as a child. Unknown author. Public domain. <a href="https://commons.wikimedia.org/wiki/File:Albert_Einstein_as_a_child.jpg">Source</a></li>
+      <li>P. Oxy. I 29 (Euclid). Public domain. <a href="https://commons.wikimedia.org/wiki/File:P._Oxy._I_29.jpg">Source</a></li>
+      <li>Telford Baseball Diamonds. Kurt Bauschardt. <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC BY-SA 2.0</a>. <a href="https://commons.wikimedia.org/wiki/File:Telford_Baseball_Diamonds_(4705723302).jpg">Source</a></li>
+      <li>Kinsmen Park Ball Diamonds. daryl_mitchell. <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC BY-SA 2.0</a>. <a href="https://commons.wikimedia.org/wiki/File:Kinsmen_Park_Ball_Diamonds_(16367628145).jpg">Source</a></li>
+      <li>Ladder leaning against the wall, Peabody Institute. Baltimore Heritage. CC0. <a href="https://commons.wikimedia.org/wiki/File:Ladder_leaning_against_the_wall,_Peabody_Institute,_1_E._Mount_Vernon_Place,_Baltimore,_MD_21202_(39542915101).jpg">Source</a></li>
+      <li>A flat-screen television. EvanProdromou. <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. <a href="https://commons.wikimedia.org/wiki/File:A_flat-screen_television.jpg">Source</a></li>
+      <li>Framing square. Jomegat (assumed). <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>. <a href="https://commons.wikimedia.org/wiki/File:Framing_square.jpg">Source</a></li>
+      <li>Fields of Ridgemont High School. Nyttend. Public domain. <a href="https://commons.wikimedia.org/wiki/File:Fields_of_Ridgemont_High_School.jpg">Source</a></li>
+    </ul>
+  </details>
+</footer>
+
+<script>
+(() => {
+  const PART_TITLES = {
+    'I': 'Pythagoras Day', 'II': 'History', 'III': 'Proofs', 'IV': 'Real Life',
+    'V': 'Computing', 'VI': 'Beyond the theorem', 'VII': 'Curiosities',
+  };
+  const RATES = [0.5, 1, 1.5, 2];
+  const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>';
+  const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
+  const $ = (id) => document.getElementById(id);
+  const iframe = $('stage');
+
+  let svg = null, scenes = [], parts = [], total = 0;
+  let t = 0, playing = true, rate = 1, loop = true, last = null;
+
+  const fmt = (s) => { s = Math.max(0, Math.floor(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+
+  // Scene list from the page itself, so the controls always match the animation
+  function readScenes(win) {
+    const list = JSON.parse(win.OM_SCENES);
+    let at = 0;
+    scenes = list.map((e, i) => {
+      const [roman, ...rest] = e.name.split(' ');
+      const s = { i, roman, name: rest.join(' '), desc: e.desc || '', start: at, dur: e.dur };
+      at += e.dur;
+      return s;
+    });
+    total = at;
+    parts = [];
+    for (const s of scenes) {
+      let p = parts[parts.length - 1];
+      if (!p || p.roman !== s.roman) { p = { roman: s.roman, title: PART_TITLES[s.roman] || s.roman, start: s.start, scenes: [] }; parts.push(p); }
+      p.scenes.push(s); s.part = parts.length - 1;
+      p.end = s.start + s.dur;
+    }
+  }
+
+  function build() {
+    $('dur').textContent = fmt(total);
+    $('track').setAttribute('aria-valuemax', String(Math.round(total)));
+    const segs = $('parts'), labels = $('labels');
+    parts.forEach((p) => {
+      const grow = p.end - p.start;
+      const seg = document.createElement('div'); seg.className = 'seg'; seg.style.flex = `${grow} 1 0`;
+      seg.innerHTML = '<div class="fill"></div>'; segs.appendChild(seg); p.seg = seg;
+      const lab = document.createElement('span'); lab.style.flex = `${grow} 1 0`; lab.textContent = p.roman; labels.appendChild(lab); p.lab = lab;
+    });
+    // scene ticks, placed after layout so the 3px gaps between parts are respected
+    requestAnimationFrame(placeTicks);
+    window.addEventListener('resize', placeTicks);
+
+    const box = $('chapters');
+    parts.forEach((p, k) => {
+      const card = document.createElement('section'); card.className = 'chap';
+      card.innerHTML = `<h3><span class="r">${p.roman}</span><span>${p.title}</span><span class="len">${fmt(p.start)}</span></h3><ol></ol>`;
+      card.querySelector('h3').addEventListener('click', () => seek(p.start));
+      const ol = card.querySelector('ol');
+      p.scenes.forEach((s) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<button title=""><span class="at">${fmt(s.start)}</span><span></span></button>`;
+        li.querySelector('span + span').textContent = s.name;
+        li.querySelector('button').title = s.desc;
+        li.querySelector('button').addEventListener('click', () => { seek(s.start); $('frame').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+        ol.appendChild(li); s.li = li;
+      });
+      box.appendChild(card); p.card = card;
+    });
+
+    RATES.forEach((r) => {
+      const b = document.createElement('button'); b.textContent = `${r}×`; b.dataset.r = r;
+      b.addEventListener('click', () => setRate(r)); $('rate').appendChild(b);
+    });
+    setRate(1);
+  }
+
+  // px position of time x on the track, accounting for the gaps between part segments
+  function xOf(x) {
+    const p = parts[partAt(x)], r = p.seg.getBoundingClientRect(), base = $('track').getBoundingClientRect();
+    return r.left - base.left + r.width * Math.min(1, (x - p.start) / (p.end - p.start));
+  }
+  function timeOfX(px) {
+    const base = $('track').getBoundingClientRect();
+    for (const p of parts) {
+      const r = p.seg.getBoundingClientRect(), l = r.left - base.left;
+      if (px <= l + r.width + 1.5) return p.start + Math.max(0, Math.min(1, (px - l) / r.width)) * (p.end - p.start);
+    }
+    return total;
+  }
+  function placeTicks() {
+    const track = $('track');
+    track.querySelectorAll('.tick').forEach((n) => n.remove());
+    for (const s of scenes) {
+      if (s.start === parts[s.part].start) continue;
+      const d = document.createElement('div'); d.className = 'tick'; d.style.left = `${xOf(s.start)}px`; track.appendChild(d);
+    }
+    paint();
+  }
+
+  const partAt = (x) => { let k = 0; parts.forEach((p, i) => { if (x >= p.start) k = i; }); return k; };
+  const sceneAt = (x) => { let k = 0; scenes.forEach((s, i) => { if (x >= s.start) k = i; }); return k; };
+
+  let lastScene = -1;
+  function paint() {
+    if (!parts.length) return;
+    const pk = partAt(t), sk = sceneAt(t);
+    parts.forEach((p, i) => {
+      const f = i < pk ? 1 : i > pk ? 0 : (t - p.start) / (p.end - p.start);
+      p.seg.firstChild.style.width = `${f * 100}%`;
+      p.seg.classList.toggle('cur', i === pk); p.lab.classList.toggle('cur', i === pk); p.card.classList.toggle('cur', i === pk);
+    });
+    $('knob').style.left = `${xOf(t)}px`;
+    $('cur').textContent = fmt(t);
+    $('track').setAttribute('aria-valuenow', String(Math.round(t)));
+    $('track').setAttribute('aria-valuetext', `${fmt(t)}, ${parts[pk].title}, ${scenes[sk].name}`);
+    if (sk !== lastScene) {
+      if (lastScene >= 0) scenes[lastScene].li.classList.remove('cur');
+      scenes[sk].li.classList.add('cur'); lastScene = sk;
+      const p = parts[pk];
+      $('nowPart').innerHTML = `<b>${p.roman}</b>`; $('nowPart').append(p.title);
+      $('nowScene').textContent = scenes[sk].desc;
+    }
+  }
+
+  function push(marked) {
+    if (!svg) return;
+    svg.dispatchEvent(new CustomEvent('data-om-seek-to-time-frame', { detail: { time: t, playing: marked } }));
+  }
+  function seek(x) {
+    t = Math.max(0, Math.min(total - 0.001, x));
+    push(playing); paint();
+  }
+  function setPlaying(v) {
+    playing = v; last = null;
+    $('play').innerHTML = v ? ICON_PAUSE : ICON_PLAY;
+    $('play').setAttribute('aria-label', v ? 'Pause' : 'Play');
+    const f = $('flash'); f.innerHTML = v ? ICON_PLAY : ICON_PAUSE;
+    f.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove('on')));
+    push(v);
+  }
+  function setRate(r) {
+    rate = r;
+    $('rate').querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.r === r));
+  }
+  const stepScene = (d) => {
+    const k = sceneAt(t);
+    if (d < 0 && t - scenes[k].start > 1.5) return seek(scenes[k].start);
+    seek(scenes[Math.max(0, Math.min(scenes.length - 1, k + d))].start);
+  };
+  const stepPart = (d) => {
+    const k = partAt(t);
+    if (d < 0 && t - parts[k].start > 1.5) return seek(parts[k].start);
+    seek(parts[Math.max(0, Math.min(parts.length - 1, k + d))].start);
+  };
+
+  // one clock: this page advances time and the stage renders each frame from it
+  function tick(now) {
+    if (playing && svg) {
+      if (last != null) {
+        t += ((now - last) / 1000) * rate;
+        if (t >= total) { if (loop) t %= total; else { t = total - 0.001; setPlaying(false); } }
+        push(true); paint();
+      }
+      last = now;
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function fitStage() {
+    const doc = iframe.contentDocument; if (!doc) return;
+    const s = Math.min(iframe.clientWidth / 1920, iframe.clientHeight / 1080);
+    doc.documentElement.style.setProperty('--fit', s);
+  }
+
+  function attach() {
+    const win = iframe.contentWindow, doc = iframe.contentDocument;
+    const st = doc.createElement('style');
+    st.textContent = `[data-omelette-chrome]{display:none!important}
+      [data-om-starter]{background:#202b48!important}
+      svg[data-om-exportable-video-with-duration-secs]{transform:scale(var(--fit,1))!important;box-shadow:none!important}`;
+    doc.head.appendChild(st);
+    fitStage();
+    new ResizeObserver(fitStage).observe(iframe);
+    readScenes(win); build();
+    const hash = /t=(\d+(?:\.\d+)?)/.exec(location.hash);
+    if (hash) t = Math.min(+hash[1], total - 0.001);
+    setPlaying(true); paint();
+    setTimeout(() => $('loading').classList.add('done'), 250);
+    requestAnimationFrame(tick);
+  }
+
+  function waitForStage() {
+    try {
+      const doc = iframe.contentDocument;
+      const el = doc && doc.querySelector('[data-om-exportable-video-with-duration-secs]');
+      if (el && iframe.contentWindow.OM_SCENES) { svg = el; attach(); return; }
+    } catch (e) {}
+    setTimeout(waitForStage, 120);
+  }
+  waitForStage();
+
+  // timeline drag and hover
+  const track = $('track'), tip = $('tip');
+  let drag = false;
+  const showTip = (px) => {
+    const x = timeOfX(px), s = scenes[sceneAt(x)];
+    tip.querySelector('.t').textContent = `${fmt(x)} · ${s.roman}. ${PART_TITLES[s.roman] || ''}`;
+    tip.querySelector('.n').textContent = s.name;
+    tip.querySelector('.d').textContent = s.desc;
+    const w = tip.offsetWidth, W = track.clientWidth;
+    tip.style.left = `${Math.max(w / 2, Math.min(W - w / 2, px))}px`;
+    tip.classList.add('on');
+  };
+  const pxOf = (e) => e.clientX - track.getBoundingClientRect().left;
+  track.addEventListener('pointerdown', (e) => { if (!scenes.length) return; drag = true; track.setPointerCapture(e.pointerId); seek(timeOfX(pxOf(e))); showTip(pxOf(e)); });
+  track.addEventListener('pointermove', (e) => { if (!scenes.length) return; if (drag) seek(timeOfX(pxOf(e))); showTip(pxOf(e)); });
+  track.addEventListener('pointerup', () => { drag = false; });
+  track.addEventListener('pointerleave', () => { if (!drag) tip.classList.remove('on'); });
+  track.addEventListener('pointercancel', () => { drag = false; tip.classList.remove('on'); });
+
+  $('hit').addEventListener('click', () => setPlaying(!playing));
+  $('hit').addEventListener('dblclick', () => toggleFull());
+  $('play').addEventListener('click', () => setPlaying(!playing));
+  $('back').addEventListener('click', () => seek(t - 10));
+  $('fwd').addEventListener('click', () => seek(t + 10));
+  $('prevScene').addEventListener('click', () => stepScene(-1));
+  $('nextScene').addEventListener('click', () => stepScene(1));
+  $('prevPart').addEventListener('click', () => stepPart(-1));
+  $('nextPart').addEventListener('click', () => stepPart(1));
+  $('loop').classList.add('on');
+  $('loop').addEventListener('click', () => {
+    loop = !loop; $('loop').classList.toggle('on', loop); $('loop').setAttribute('aria-pressed', String(loop));
+  });
+  const toggleFull = () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else $('frame').requestFullscreen && $('frame').requestFullscreen();
+  };
+  $('full').addEventListener('click', toggleFull);
+
+  document.addEventListener('keydown', (e) => {
+    if (!scenes.length || e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (k === ' ' || k === 'k') { if (e.target.tagName === 'BUTTON' && k === ' ') return; e.preventDefault(); setPlaying(!playing); }
+    else if (k === 'ArrowLeft' || k === 'j') { e.preventDefault(); seek(t - (e.shiftKey ? 1 : 10)); }
+    else if (k === 'ArrowRight' || k === 'l') { e.preventDefault(); seek(t + (e.shiftKey ? 1 : 10)); }
+    else if (k === '[') stepScene(-1);
+    else if (k === ']') stepScene(1);
+    else if (k === 'PageUp') { e.preventDefault(); stepPart(-1); }
+    else if (k === 'PageDown') { e.preventDefault(); stepPart(1); }
+    else if (k === 'Home') { e.preventDefault(); seek(0); }
+    else if (k === 'End') { e.preventDefault(); seek(total - 0.5); }
+    else if (/^[1-7]$/.test(k) && parts[+k - 1]) seek(parts[+k - 1].start);
+    else if (k === 'f' || k === 'F') toggleFull();
+    else if (k === '<' || k === ',') setRate(RATES[Math.max(0, RATES.indexOf(rate) - 1)]);
+    else if (k === '>' || k === '.') setRate(RATES[Math.min(RATES.length - 1, RATES.indexOf(rate) + 1)]);
+  });
+})();
+</script>
+</body>
+</html>
