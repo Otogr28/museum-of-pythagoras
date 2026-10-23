@@ -1,7 +1,7 @@
 /* Classical — design-system tokens and component classes. This file is the source of truth for the system's look; retune it here and see readme.md. */
-/* Math symbols the default Latin subsets leave out (√ ≈ ⅜ Δ ₁ ₂ ≤ ≠ ⁿ …). Imported first so the
+/* Math symbols the default Latin subsets leave out (√ ≈ ⅜ Δ ₁ ₂ ≤ ≠ ⁿ … π ∑ ∫ −). Imported first so the
    Latin faces below are matched first and these faces only fill the gaps. */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Lora:ital@0;1&text=%E2%88%9A%E2%89%88%E2%85%9C%CE%94%E2%82%81%E2%82%82%E2%89%A4%E2%89%A0%E2%81%BF%E2%80%A6&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Lora:ital@0;1&text=%E2%88%9A%E2%89%88%E2%85%9C%CE%94%E2%82%81%E2%82%82%E2%89%A4%E2%89%A0%E2%81%BF%E2%80%A6%CF%80%E2%88%91%E2%88%AB%E2%88%92&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
 
 :root {

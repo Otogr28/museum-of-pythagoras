@@ -1,4 +1,4 @@
-// Beyond the theorem — triples, irrational lengths, Fermat, the sphere, relativity. ~62s, 1920x1080, animations-v3.
+// Beyond the theorem — triples, irrational lengths, Fermat, the sphere, relativity. ~73s, 1920x1080, animations-v3.
 const W = 1920, H = 1080;
 const MOTION = { enter: Easing.easeOutCubic, draw: Easing.easeInOutCubic, pop: Easing.easeOutBack };
 const cl = (v) => Math.max(0, Math.min(1, v));
@@ -137,7 +137,7 @@ function Column({ T, t0, th, kicker, title, note, noteAt = 0.9, children }) {
   );
 }
 function useScene(T, C, name, next) {
-  const t0 = C[name], t1 = C[next];
+  const t0 = C[name], t1 = typeof next === 'number' ? next : C[next]; // a number: the last scene ends with the piece
   const inP = prog(T, t0 - 0.2, t0 + 0.6), out = prog(T, t1 - 0.6, t1 - 0.05);
   const turn = 16 * (1 - MOTION.enter(inP)) - 16 * MOTION.draw(out), depth = -160 * (1 - MOTION.enter(inP)) - 160 * MOTION.draw(out);
   return { t0, t1, show: inP > 0 && out < 1, o: MOTION.enter(inP) * (1 - out), tf: `perspective(1600px) rotateY(${turn}deg) translateZ(${depth}px) scale(${0.78 + 0.22 * MOTION.enter(inP) - 0.22 * MOTION.draw(out)})` };
@@ -342,8 +342,8 @@ function Sphere({ T, C, th }) {
 }
 
 // ---------------- Relativity ----------------
-function Relativity({ T, C, th }) {
-  const s = useScene(T, C, 'Relativity', 'Close');
+function Relativity({ T, C, th, end }) {
+  const s = useScene(T, C, 'Relativity', end + 1);
   if (!s.show) return null;
   const t0 = s.t0, OX = 300, OY = 780, MC = 380;
   const draw = MOTION.draw(prog(T, t0 + 0.8, t0 + 2.0));
@@ -378,28 +378,13 @@ function Relativity({ T, C, th }) {
   );
 }
 
-// ---------------- Close ----------------
-function Close({ T, C, th }) {
-  const t0 = C.Close;
-  if (T < t0 - 0.3) return null;
-  const h = prog(T, t0 - 0.2, t0 + 0.8), h2 = prog(T, t0 + 1.0, t0 + 1.9);
-  return (
-    <div style={{ position: 'absolute', inset: 0 }}>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 380, textAlign: 'center', opacity: (h) > 0 ? 1 : 0, transform: `translateY(${16 * (1 - MOTION.enter(h))}px)`,
-        fontFamily: SERIF, fontSize: 80, lineHeight: 1, color: th.ink }}><Words p={h}>{"From a clay tablet to relativity, one relation."}</Words></div>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 540, textAlign: 'center', opacity: h2, transform: `scale(${0.92 + 0.08 * MOTION.pop(h2)})`,
-        fontFamily: SERIF, fontStyle: 'italic', fontSize: 120, lineHeight: 1, color: th.accent }}>a² + b² = c²</div>
-    </div>
-  );
-}
-
 function BeyondPiece({ tweaks }) {
   const { T, CUES, authoredTotal, time } = useComposition();
   const th = THEMES[tweaks.ground] || THEMES.Museum;
   const rootRef = React.useRef(null);
   const sec = Math.floor(T);
   React.useEffect(() => { rootRef.current && rootRef.current.setAttribute('data-screen-label', `t=${sec}s`); }, [sec]);
-  const end = authoredTotal || 80.5;
+  const end = authoredTotal || 73.5;
   const fade = 1 - prog(T, end - 0.7, end - 0.05);
   return (
     <div ref={rootRef} className="om3d" style={{ position: 'absolute', inset: 0, background: th.bg, overflow: 'hidden', '--sheen': `${130 - ((time % 7) / 7) * 160}%` }}>
@@ -411,8 +396,7 @@ function BeyondPiece({ tweaks }) {
         <Spiral T={T} C={CUES} th={th} />
         <Fermat T={T} C={CUES} th={th} />
         <Sphere T={T} C={CUES} th={th} />
-        <Relativity T={T} C={CUES} th={th} />
-        <Close T={T} C={CUES} th={th} />
+        <Relativity T={T} C={CUES} th={th} end={end} />
         {/* Triples */}<ShapeMorph T={T} at={CUES.Triples} k={0} cx={560} cy={560} color={th.accent} />
         {/* Spiral */}<ShapeMorph T={T} at={CUES.Spiral} k={1} cx={560} cy={560} color={th.accent} />
         {/* Fermat */}<ShapeMorph T={T} at={CUES.Fermat} k={2} cx={560} cy={560} color={th.accent} />
